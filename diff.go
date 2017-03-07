@@ -3,6 +3,8 @@
 package diff
 
 import (
+	"encoding/json"
+	"reflect"
 	"strings"
 
 	"github.com/pmezard/go-difflib/difflib"
@@ -46,4 +48,18 @@ func Text(expected, actual string) (diff string) {
 		strings.SplitAfter(expected, "\n"),
 		strings.SplitAfter(actual, "\n"),
 	)
+}
+
+// AsJSON marshals two objects as JSON, then compares the output. Marshaling
+// errors are ignored.
+func AsJSON(expected, actual interface{}) (diff string) {
+	expectedJSON, _ := json.MarshalIndent(expected, "", "    ")
+	actualJSON, _ := json.MarshalIndent(actual, "", "    ")
+	var e, a interface{}
+	_ = json.Unmarshal(expectedJSON, &e)
+	_ = json.Unmarshal(actualJSON, &a)
+	if reflect.DeepEqual(e, a) {
+		return ""
+	}
+	return Text(string(expectedJSON), string(actualJSON))
 }
