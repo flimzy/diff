@@ -61,5 +61,5 @@ func AsJSON(expected, actual interface{}) (diff string) {
 	if reflect.DeepEqual(e, a) {
 		return ""
 	}
-	return Text(string(expectedJSON), string(actualJSON))
+	return Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 }
