@@ -63,3 +63,11 @@ func AsJSON(expected, actual interface{}) (diff string) {
 	}
 	return Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 }
+
+// JSON unmarshals two JSON strings, then calls AsJSON on them.
+func JSON(expected, actual []byte) (diff string) {
+	var expectedInterface, actualInterface interface{}
+	_ = json.Unmarshal(expected, &expectedInterface)
+	_ = json.Unmarshal(actual, &actualInterface)
+	return AsJSON(expectedInterface, actualInterface)
+}
