@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -70,4 +71,22 @@ func JSON(expected, actual []byte) (diff string) {
 	_ = json.Unmarshal(expected, &expectedInterface)
 	_ = json.Unmarshal(actual, &actualInterface)
 	return AsJSON(expectedInterface, actualInterface)
+}
+
+// Interface compares two objects with reflect.DeepEqual, and if they differ,
+// it returns a diff of the spew.Dump() outputs
+func Interface(expected, actual interface{}) (diff string) {
+	if reflect.DeepEqual(expected, actual) {
+		return ""
+	}
+	scs := spew.ConfigState{
+		Indent:                  "  ",
+		DisableMethods:          true,
+		SortKeys:                true,
+		DisablePointerAddresses: true,
+		DisableCapacities:       true,
+	}
+	expString := scs.Sdump(expected)
+	actString := scs.Sdump(actual)
+	return Text(expString, actString)
 }
