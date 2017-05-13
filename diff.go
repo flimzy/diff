@@ -3,7 +3,9 @@
 package diff
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"reflect"
 	"strings"
 
@@ -51,11 +53,39 @@ func Text(expected, actual string) (diff string) {
 	)
 }
 
+func isJSON(i interface{}) (bool, []byte) {
+	if r, ok := i.(io.Reader); ok {
+		buf := &bytes.Buffer{}
+		buf.ReadFrom(r)
+		return true, buf.Bytes()
+	}
+	switch t := i.(type) {
+	case []byte:
+		return true, t
+	case json.RawMessage:
+		return true, t
+	}
+	return false, nil
+}
+
+func marshal(i interface{}) []byte {
+	if isJ, buf := isJSON(i); isJ {
+		var x interface{}
+		_ = json.Unmarshal(buf, &x)
+		i = x
+	}
+	j, _ := json.MarshalIndent(i, "", "    ")
+	return j
+}
+
 // AsJSON marshals two objects as JSON, then compares the output. Marshaling
-// errors are ignored.
+// errors are ignored. If an input object is an io.Reader, it is treated as
+// a JSON stream. If it is a []byte or json.RawMessage, it is treated as raw
+// JSON. Any raw JSON source is unmarshaled then remarshaled with indentation
+// for normalization and comparison.
 func AsJSON(expected, actual interface{}) (diff string) {
-	expectedJSON, _ := json.MarshalIndent(expected, "", "    ")
-	actualJSON, _ := json.MarshalIndent(actual, "", "    ")
+	expectedJSON := marshal(expected)
+	actualJSON := marshal(actual)
 	var e, a interface{}
 	_ = json.Unmarshal(expectedJSON, &e)
 	_ = json.Unmarshal(actualJSON, &a)
