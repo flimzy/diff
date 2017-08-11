@@ -69,7 +69,10 @@ func Text(expected, actual string) (diff string) {
 func isJSON(i interface{}) (bool, []byte) {
 	if r, ok := i.(io.Reader); ok {
 		buf := &bytes.Buffer{}
-		buf.ReadFrom(r)
+		_, err := buf.ReadFrom(r)
+		if err != nil {
+			panic(err)
+		}
 		return true, buf.Bytes()
 	}
 	switch t := i.(type) {
