@@ -13,6 +13,19 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
+// Result is the result of a diff function. It may be nil, if the inputs were
+// considered identical, or accessed via the String() method to return
+type Result struct {
+	diff string
+}
+
+func (r *Result) String() string {
+	if r == nil {
+		return ""
+	}
+	return string(r.diff)
+}
+
 // sliceDiff expects two slices of \n-terminated strings to compare.
 func sliceDiff(expected, actual []string) string {
 	udiff := difflib.UnifiedDiff{
