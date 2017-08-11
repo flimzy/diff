@@ -5,6 +5,7 @@ package diff
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -13,8 +14,27 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
+// Result is the result of a diff function. It may be nil, if the inputs were
+// considered identical, or accessed via the String() method to return the
+// diff. Any errors are returned as their textual representation via String()
+// as well.
+type Result struct {
+	diff string
+	err  string
+}
+
+func (r *Result) String() string {
+	if r == nil {
+		return ""
+	}
+	if r.err != "" {
+		return r.err
+	}
+	return string(r.diff)
+}
+
 // sliceDiff expects two slices of \n-terminated strings to compare.
-func sliceDiff(expected, actual []string) string {
+func sliceDiff(expected, actual []string) *Result {
 	udiff := difflib.UnifiedDiff{
 		A:        expected,
 		FromFile: "expected",
@@ -24,15 +44,20 @@ func sliceDiff(expected, actual []string) string {
 	}
 	diff, err := difflib.GetUnifiedDiffString(udiff)
 	if err != nil {
+		// This can only happen if a write to a byte buffer fails, so can
+		// effectively be ignored, except in case of hardware failure or OOM.
 		panic(err)
 	}
-	return diff
+	if diff == "" {
+		return nil
+	}
+	return &Result{diff: diff}
 
 }
 
 // TextSlices compares two slices of text, treating each element as a line of
-// text. Newlines are added to each element,if they are found to be missing.
-func TextSlices(expected, actual []string) (diff string) {
+// text. Newlines are added to each element, if they are found to be missing.
+func TextSlices(expected, actual []string) *Result {
 	e := make([]string, len(expected))
 	a := make([]string, len(actual))
 	for i, str := range expected {
@@ -44,70 +69,93 @@ func TextSlices(expected, actual []string) (diff string) {
 	return sliceDiff(e, a)
 }
 
-// Text compares two strings, line-by-line, for differences. If the slices are
-// identical, the return value will be the empty string.
-func Text(expected, actual string) (diff string) {
-	return sliceDiff(
+// Text compares two strings, line-by-line, for differences.
+func Text(expected, actual string) *Result {
+	expected = strings.TrimSuffix(expected, "\n")
+	actual = strings.TrimSuffix(actual, "\n")
+	return TextSlices(
 		strings.SplitAfter(expected, "\n"),
 		strings.SplitAfter(actual, "\n"),
 	)
 }
 
-func isJSON(i interface{}) (bool, []byte) {
+func isJSON(i interface{}) (bool, []byte, error) {
 	if r, ok := i.(io.Reader); ok {
 		buf := &bytes.Buffer{}
-		buf.ReadFrom(r)
-		return true, buf.Bytes()
+		_, err := buf.ReadFrom(r)
+		if err != nil {
+			return false, nil, err
+		}
+		return true, buf.Bytes(), nil
 	}
 	switch t := i.(type) {
 	case []byte:
-		return true, t
+		return true, t, nil
 	case json.RawMessage:
-		return true, t
+		return true, t, nil
 	}
-	return false, nil
+	return false, nil, nil
 }
 
-func marshal(i interface{}) []byte {
-	if isJ, buf := isJSON(i); isJ {
+func marshal(i interface{}) ([]byte, error) {
+	isJ, buf, err := isJSON(i)
+	if err != nil {
+		return nil, err
+	}
+	if isJ {
 		var x interface{}
-		_ = json.Unmarshal(buf, &x)
+		if e := json.Unmarshal(buf, &x); e != nil {
+			return nil, e
+		}
 		i = x
 	}
-	j, _ := json.MarshalIndent(i, "", "    ")
-	return j
+	j, err := json.MarshalIndent(i, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+	return j, nil
 }
 
-// AsJSON marshals two objects as JSON, then compares the output. Marshaling
-// errors are ignored. If an input object is an io.Reader, it is treated as
-// a JSON stream. If it is a []byte or json.RawMessage, it is treated as raw
-// JSON. Any raw JSON source is unmarshaled then remarshaled with indentation
-// for normalization and comparison.
-func AsJSON(expected, actual interface{}) (diff string) {
-	expectedJSON := marshal(expected)
-	actualJSON := marshal(actual)
+// AsJSON marshals two objects as JSON, then compares the output. If an input
+// object is an io.Reader, it is treated as a JSON stream. If it is a []byte or
+// json.RawMessage, it is treated as raw JSON. Any raw JSON source is
+// unmarshaled then remarshaled with indentation for normalization and
+// comparison.
+func AsJSON(expected, actual interface{}) *Result {
+	expectedJSON, err := marshal(expected)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("failed to marshal expected value: %s", err)}
+	}
+	actualJSON, err := marshal(actual)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("failed to marshal actual value: %s", err)}
+	}
 	var e, a interface{}
 	_ = json.Unmarshal(expectedJSON, &e)
 	_ = json.Unmarshal(actualJSON, &a)
 	if reflect.DeepEqual(e, a) {
-		return ""
+		return nil
 	}
 	return Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 }
 
 // JSON unmarshals two JSON strings, then calls AsJSON on them.
-func JSON(expected, actual []byte) (diff string) {
+func JSON(expected, actual []byte) *Result {
 	var expectedInterface, actualInterface interface{}
-	_ = json.Unmarshal(expected, &expectedInterface)
-	_ = json.Unmarshal(actual, &actualInterface)
+	if err := json.Unmarshal(expected, &expectedInterface); err != nil {
+		return &Result{err: fmt.Sprintf("failed to unmarshal expected value: %s", err)}
+	}
+	if err := json.Unmarshal(actual, &actualInterface); err != nil {
+		return &Result{err: fmt.Sprintf("failed to unmarshal actual value: %s", err)}
+	}
 	return AsJSON(expectedInterface, actualInterface)
 }
 
 // Interface compares two objects with reflect.DeepEqual, and if they differ,
 // it returns a diff of the spew.Dump() outputs
-func Interface(expected, actual interface{}) (diff string) {
+func Interface(expected, actual interface{}) *Result {
 	if reflect.DeepEqual(expected, actual) {
-		return ""
+		return nil
 	}
 	scs := spew.ConfigState{
 		Indent:                  "  ",
