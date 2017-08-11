@@ -18,3 +18,33 @@ func TestResultString(t *testing.T) {
 		}
 	})
 }
+
+func TestSliceDiff(t *testing.T) {
+	tests := []struct {
+		name             string
+		expected, actual []string
+		result           string
+	}{
+		{
+			name:     "equal",
+			expected: []string{"foo"},
+			actual:   []string{"foo"},
+		},
+		{
+			name:     "different",
+			expected: []string{"foo"},
+			actual:   []string{"bar"},
+			result:   "--- expected\n+++ actual\n@@ -1 +1 @@\n-foo+bar",
+		},
+	}
+	for _, test := range tests {
+		result := sliceDiff(test.expected, test.actual)
+		var resultText string
+		if result != nil {
+			resultText = result.String()
+		}
+		if resultText != test.result {
+			t.Errorf("Unexpected result:\n%s\n", resultText)
+		}
+	}
+}
