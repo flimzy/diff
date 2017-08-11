@@ -63,7 +63,9 @@ func TextSlices(expected, actual []string) *Result {
 // Text compares two strings, line-by-line, for differences. If the slices are
 // identical, the return value will be the empty string.
 func Text(expected, actual string) *Result {
-	return sliceDiff(
+	expected = strings.TrimSuffix(expected, "\n")
+	actual = strings.TrimSuffix(actual, "\n")
+	return TextSlices(
 		strings.SplitAfter(expected, "\n"),
 		strings.SplitAfter(actual, "\n"),
 	)
@@ -93,7 +95,10 @@ func marshal(i interface{}) []byte {
 		_ = json.Unmarshal(buf, &x)
 		i = x
 	}
-	j, _ := json.MarshalIndent(i, "", "    ")
+	j, err := json.MarshalIndent(i, "", "    ")
+	if err != nil {
+		panic(err)
+	}
 	return j
 }
 
