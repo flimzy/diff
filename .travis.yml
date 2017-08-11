@@ -1,6 +1,7 @@
 language: go
 go:
   - 1.8.x
+  - master
 addons:
   apt:
     sources:
@@ -11,6 +12,10 @@ addons:
 cache:
   directories:
     - $HOME/gopath/pkg
+
+matrix:
+  allow_failures:
+    - go: master
 
 notifications:
   email: false
