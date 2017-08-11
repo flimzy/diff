@@ -5,6 +5,7 @@ package diff
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -14,14 +15,20 @@ import (
 )
 
 // Result is the result of a diff function. It may be nil, if the inputs were
-// considered identical, or accessed via the String() method to return
+// considered identical, or accessed via the String() method to return the
+// diff. Any errors are returned as their textual representation via String()
+// as well.
 type Result struct {
 	diff string
+	err  string
 }
 
 func (r *Result) String() string {
 	if r == nil {
 		return ""
+	}
+	if r.err != "" {
+		return r.err
 	}
 	return string(r.diff)
 }
@@ -37,6 +44,8 @@ func sliceDiff(expected, actual []string) *Result {
 	}
 	diff, err := difflib.GetUnifiedDiffString(udiff)
 	if err != nil {
+		// This can only happen if a write to a byte buffer fails, so can
+		// effectively be ignored, except in case of hardware failure or OOM.
 		panic(err)
 	}
 	if diff == "" {
@@ -71,35 +80,41 @@ func Text(expected, actual string) *Result {
 	)
 }
 
-func isJSON(i interface{}) (bool, []byte) {
+func isJSON(i interface{}) (bool, []byte, error) {
 	if r, ok := i.(io.Reader); ok {
 		buf := &bytes.Buffer{}
 		_, err := buf.ReadFrom(r)
 		if err != nil {
-			panic(err)
+			return false, nil, err
 		}
-		return true, buf.Bytes()
+		return true, buf.Bytes(), nil
 	}
 	switch t := i.(type) {
 	case []byte:
-		return true, t
+		return true, t, nil
 	case json.RawMessage:
-		return true, t
+		return true, t, nil
 	}
-	return false, nil
+	return false, nil, nil
 }
 
-func marshal(i interface{}) []byte {
-	if isJ, buf := isJSON(i); isJ {
+func marshal(i interface{}) ([]byte, error) {
+	isJ, buf, err := isJSON(i)
+	if err != nil {
+		return nil, err
+	}
+	if isJ {
 		var x interface{}
-		_ = json.Unmarshal(buf, &x)
+		if e := json.Unmarshal(buf, &x); e != nil {
+			return nil, e
+		}
 		i = x
 	}
 	j, err := json.MarshalIndent(i, "", "    ")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return j
+	return j, nil
 }
 
 // AsJSON marshals two objects as JSON, then compares the output. Marshaling
@@ -108,8 +123,14 @@ func marshal(i interface{}) []byte {
 // JSON. Any raw JSON source is unmarshaled then remarshaled with indentation
 // for normalization and comparison.
 func AsJSON(expected, actual interface{}) *Result {
-	expectedJSON := marshal(expected)
-	actualJSON := marshal(actual)
+	expectedJSON, err := marshal(expected)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("failed to marshal expected value: %s", err)}
+	}
+	actualJSON, err := marshal(actual)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("failed to marshal actual value: %s", err)}
+	}
 	var e, a interface{}
 	_ = json.Unmarshal(expectedJSON, &e)
 	_ = json.Unmarshal(actualJSON, &a)

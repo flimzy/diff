@@ -2,6 +2,8 @@ package diff
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"strings"
 	"testing"
 )
@@ -146,7 +148,7 @@ func TestIsJSON(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			isJSON, result := isJSON(test.input)
+			isJSON, result, _ := isJSON(test.input)
 			if isJSON != test.isJSON {
 				t.Errorf("Unexpected result: %t", isJSON)
 			}
@@ -157,11 +159,20 @@ func TestIsJSON(t *testing.T) {
 	}
 }
 
+type errorReader struct{}
+
+var _ io.Reader = &errorReader{}
+
+func (r *errorReader) Read(_ []byte) (int, error) {
+	return 0, errors.New("read error")
+}
+
 func TestMarshal(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    interface{}
 		expected string
+		err      string
 	}{
 		{
 			name:     "byte slice",
@@ -173,10 +184,27 @@ func TestMarshal(t *testing.T) {
 			input:    "foo",
 			expected: `"foo"`,
 		},
+		{
+			name:  "invalid json",
+			input: []byte("invalid json"),
+			err:   "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name:  "error reader",
+			input: &errorReader{},
+			err:   "read error",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := marshal(test.input)
+			result, err := marshal(test.input)
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
+			if test.err != errMsg {
+				t.Errorf("Unexpected error: %s", errMsg)
+			}
 			if string(result) != test.expected {
 				t.Errorf("Unexpected result: %s", string(result))
 			}
@@ -208,6 +236,18 @@ func TestAsJSON(t *testing.T) {
      "bar"
  ]
 `,
+		},
+		{
+			name:     "Unmarshalable expected",
+			expected: make(chan int),
+			actual:   "foo",
+			result:   "failed to marshal expected value: json: unsupported type: chan int",
+		},
+		{
+			name:     "Unmarshalable actual",
+			expected: "foo",
+			actual:   make(chan int),
+			result:   "failed to marshal actual value: json: unsupported type: chan int",
 		},
 	}
 	for _, test := range tests {
