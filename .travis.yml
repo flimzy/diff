@@ -25,6 +25,6 @@ install:
   - go get -u gopkg.in/alecthomas/gometalinter.v1 && gometalinter.v1 --install
 
 script:
-  - go test -race -cover -covermode=set -coverprofile=coverage.txt && bash <(curl -s https://codecov.io/bash)
   - gometalinter.v1 --config .linter_test.json
   - gometalinter.v1 --config .linter.json
+  - go test -race -cover -covermode=set -coverprofile=coverage.txt && bash <(curl -s https://codecov.io/bash)
