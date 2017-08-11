@@ -56,7 +56,7 @@ func sliceDiff(expected, actual []string) *Result {
 }
 
 // TextSlices compares two slices of text, treating each element as a line of
-// text. Newlines are added to each element,if they are found to be missing.
+// text. Newlines are added to each element, if they are found to be missing.
 func TextSlices(expected, actual []string) *Result {
 	e := make([]string, len(expected))
 	a := make([]string, len(actual))
@@ -69,8 +69,7 @@ func TextSlices(expected, actual []string) *Result {
 	return sliceDiff(e, a)
 }
 
-// Text compares two strings, line-by-line, for differences. If the slices are
-// identical, the return value will be the empty string.
+// Text compares two strings, line-by-line, for differences.
 func Text(expected, actual string) *Result {
 	expected = strings.TrimSuffix(expected, "\n")
 	actual = strings.TrimSuffix(actual, "\n")
@@ -117,11 +116,11 @@ func marshal(i interface{}) ([]byte, error) {
 	return j, nil
 }
 
-// AsJSON marshals two objects as JSON, then compares the output. Marshaling
-// errors are ignored. If an input object is an io.Reader, it is treated as
-// a JSON stream. If it is a []byte or json.RawMessage, it is treated as raw
-// JSON. Any raw JSON source is unmarshaled then remarshaled with indentation
-// for normalization and comparison.
+// AsJSON marshals two objects as JSON, then compares the output. If an input
+// object is an io.Reader, it is treated as a JSON stream. If it is a []byte or
+// json.RawMessage, it is treated as raw JSON. Any raw JSON source is
+// unmarshaled then remarshaled with indentation for normalization and
+// comparison.
 func AsJSON(expected, actual interface{}) *Result {
 	expectedJSON, err := marshal(expected)
 	if err != nil {
@@ -143,8 +142,12 @@ func AsJSON(expected, actual interface{}) *Result {
 // JSON unmarshals two JSON strings, then calls AsJSON on them.
 func JSON(expected, actual []byte) *Result {
 	var expectedInterface, actualInterface interface{}
-	_ = json.Unmarshal(expected, &expectedInterface)
-	_ = json.Unmarshal(actual, &actualInterface)
+	if err := json.Unmarshal(expected, &expectedInterface); err != nil {
+		return &Result{err: fmt.Sprintf("failed to unmarshal expected value: %s", err)}
+	}
+	if err := json.Unmarshal(actual, &actualInterface); err != nil {
+		return &Result{err: fmt.Sprintf("failed to unmarshal actual value: %s", err)}
+	}
 	return AsJSON(expectedInterface, actualInterface)
 }
 

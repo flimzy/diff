@@ -287,6 +287,18 @@ func TestJSON(t *testing.T) {
  ]
 `,
 		},
+		{
+			name:     "invalid expected",
+			expected: "invalid json",
+			actual:   `"foo"`,
+			result:   "failed to unmarshal expected value: invalid character 'i' looking for beginning of value",
+		},
+		{
+			name:     "invalid actual",
+			expected: `"foo"`,
+			actual:   "invalid json",
+			result:   "failed to unmarshal actual value: invalid character 'i' looking for beginning of value",
+		},
 	}
 	for _, test := range tests {
 		result := JSON([]byte(test.expected), []byte(test.actual))
