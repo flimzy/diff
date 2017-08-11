@@ -299,6 +299,11 @@ func TestJSON(t *testing.T) {
 			actual:   "invalid json",
 			result:   "failed to unmarshal actual value: invalid character 'i' looking for beginning of value",
 		},
+		{
+			name:     "empty",
+			expected: "",
+			actual:   "",
+		},
 	}
 	for _, test := range tests {
 		result := JSON([]byte(test.expected), []byte(test.actual))

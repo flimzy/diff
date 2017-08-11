@@ -139,14 +139,19 @@ func AsJSON(expected, actual interface{}) *Result {
 	return Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 }
 
-// JSON unmarshals two JSON strings, then calls AsJSON on them.
+// JSON unmarshals two JSON strings, then calls AsJSON on them. As a special
+// case, empty byte arrays are unmarshaled to nil.
 func JSON(expected, actual []byte) *Result {
 	var expectedInterface, actualInterface interface{}
-	if err := json.Unmarshal(expected, &expectedInterface); err != nil {
-		return &Result{err: fmt.Sprintf("failed to unmarshal expected value: %s", err)}
+	if len(expected) > 0 {
+		if err := json.Unmarshal(expected, &expectedInterface); err != nil {
+			return &Result{err: fmt.Sprintf("failed to unmarshal expected value: %s", err)}
+		}
 	}
-	if err := json.Unmarshal(actual, &actualInterface); err != nil {
-		return &Result{err: fmt.Sprintf("failed to unmarshal actual value: %s", err)}
+	if len(actual) > 0 {
+		if err := json.Unmarshal(actual, &actualInterface); err != nil {
+			return &Result{err: fmt.Sprintf("failed to unmarshal actual value: %s", err)}
+		}
 	}
 	return AsJSON(expectedInterface, actualInterface)
 }
