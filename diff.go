@@ -82,8 +82,7 @@ func Text(expected, actual string) *Result {
 func isJSON(i interface{}) (bool, []byte, error) {
 	if r, ok := i.(io.Reader); ok {
 		buf := &bytes.Buffer{}
-		_, err := buf.ReadFrom(r)
-		if err != nil {
+		if _, err := buf.ReadFrom(r); err != nil {
 			return false, nil, err
 		}
 		return true, buf.Bytes(), nil
@@ -104,8 +103,10 @@ func marshal(i interface{}) ([]byte, error) {
 	}
 	if isJ {
 		var x interface{}
-		if e := json.Unmarshal(buf, &x); e != nil {
-			return nil, e
+		if len(buf) > 0 {
+			if e := json.Unmarshal(buf, &x); e != nil {
+				return nil, e
+			}
 		}
 		i = x
 	}
