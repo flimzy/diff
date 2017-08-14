@@ -27,4 +27,4 @@ install:
 script:
   - gometalinter.v1 --config .linter_test.json
   - gometalinter.v1 --config .linter.json
-  - go test -race -cover -covermode=set -coverprofile=coverage.txt && bash <(curl -s https://codecov.io/bash)
+  - go test -race -cover -covermode=atomic -coverprofile=coverage.txt && bash <(curl -s https://codecov.io/bash)
