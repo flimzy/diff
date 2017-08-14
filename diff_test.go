@@ -249,6 +249,12 @@ func TestAsJSON(t *testing.T) {
 			actual:   make(chan int),
 			result:   "failed to marshal actual value: json: unsupported type: chan int",
 		},
+		{
+			name:     "empty reader",
+			expected: strings.NewReader(""),
+			actual:   nil,
+			result:   "",
+		},
 	}
 	for _, test := range tests {
 		result := AsJSON(test.expected, test.actual)
