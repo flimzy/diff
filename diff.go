@@ -158,17 +158,34 @@ func JSON(expected, actual []byte) *Result {
 }
 
 // Interface compares two objects with reflect.DeepEqual, and if they differ,
-// it returns a diff of the spew.Dump() outputs
+// it returns a diff of the spew.Dump() outputs.
 func Interface(expected, actual interface{}) *Result {
-	if reflect.DeepEqual(expected, actual) {
-		return nil
-	}
-	scs := spew.ConfigState{
+	return iface(expected, actual, spew.ConfigState{
 		Indent:                  "  ",
 		DisableMethods:          true,
 		SortKeys:                true,
 		DisablePointerAddresses: true,
 		DisableCapacities:       true,
+	})
+}
+
+// InterfaceMaxDepth compares two objects with reflect.DeepEqual, and if they
+// differ, it returns a diff of the spew.Dump() outputs, to the specified
+// maximum depth.
+func InterfaceMaxDepth(expected, actual interface{}, depth int) *Result {
+	return iface(expected, actual, spew.ConfigState{
+		Indent:                  "  ",
+		MaxDepth:                depth,
+		DisableMethods:          true,
+		SortKeys:                true,
+		DisablePointerAddresses: true,
+		DisableCapacities:       true,
+	})
+}
+
+func iface(expected, actual interface{}, scs spew.ConfigState) *Result {
+	if reflect.DeepEqual(expected, actual) {
+		return nil
 	}
 	expString := scs.Sdump(expected)
 	actString := scs.Sdump(actual)
