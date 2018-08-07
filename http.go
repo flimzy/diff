@@ -19,3 +19,17 @@ func HTTPRequest(expected, actual *http.Request) *Result {
 	}
 	return Text(string(expDump), string(actDump))
 }
+
+// HTTPResponse compares the metadata and bodies of the two HTTP responses, and
+// returns the difference.
+func HTTPResponse(expected, actual *http.Response) *Result {
+	expDump, err := httputil.DumpResponse(expected, true)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("Failed to dump expected response: %s", err)}
+	}
+	actDump, err := httputil.DumpResponse(actual, true)
+	if err != nil {
+		return &Result{err: fmt.Sprintf("Failed to dump actual response: %s", err)}
+	}
+	return Text(string(expDump), string(actDump))
+}
