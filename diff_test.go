@@ -123,16 +123,24 @@ func TestText(t *testing.T) {
 			expected: strings.NewReader("foo"),
 			actual:   "foo",
 		},
+		{
+			name:     "string vs nil",
+			expected: "foo",
+			actual:   nil,
+			result:   "--- expected\n+++ actual\n@@ -1 +1 @@\n-foo\n+\n",
+		},
 	}
 	for _, test := range tests {
-		result := Text(test.expected, test.actual)
-		var resultText string
-		if result != nil {
-			resultText = result.String()
-		}
-		if resultText != test.result {
-			t.Errorf("Unexpected result:\n%s\n", resultText)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			result := Text(test.expected, test.actual)
+			var resultText string
+			if result != nil {
+				resultText = result.String()
+			}
+			if resultText != test.result {
+				t.Errorf("Unexpected result:\n%s\n", resultText)
+			}
+		})
 	}
 }
 
