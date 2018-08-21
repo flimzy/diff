@@ -102,6 +102,8 @@ func toText(i interface{}) (string, error) {
 	case io.Reader:
 		text, err := ioutil.ReadAll(t)
 		return string(text), err
+	case nil:
+		return "", nil
 	}
 	return "", errors.New("input must be of type string, []byte, or io.Reader")
 }
