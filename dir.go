@@ -1,7 +1,7 @@
 package diff
 
 import (
-	"crypto/md5"
+	"crypto/md5" // nolint: gas
 	"encoding/hex"
 	"io"
 	"os"
@@ -47,7 +47,7 @@ func recurseDir(result map[string]string, parents []string) error {
 		if err != nil {
 			return err
 		}
-		hash := md5.New()
+		hash := md5.New() // nolint: gas
 		if _, err := io.Copy(hash, content); err != nil {
 			return err
 		}
