@@ -3,9 +3,11 @@ package diff
 import (
 	"crypto/md5" // nolint: gas
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"strings"
+	"syscall"
 )
 
 // DirChecksum compares the checksum of the contents of dir against the checksums
@@ -91,5 +93,17 @@ func hash(dir string, f os.FileInfo, full bool) (string, error) {
 		}
 		hash = hex.EncodeToString(h.Sum([]byte{}))
 	}
+	if full {
+		return fmt.Sprintf("%04o %s %s", f.Mode(), owner(f), hash), nil
+	}
 	return hash, nil
+}
+
+func owner(f os.FileInfo) string {
+	switch t := f.Sys().(type) {
+	case *syscall.Stat_t:
+		return fmt.Sprintf("%d.%d", t.Uid, t.Gid)
+	default:
+		return "---"
+	}
 }

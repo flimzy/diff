@@ -1,12 +1,18 @@
 package diff
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"testing"
 )
 
 func TestCheckDir(t *testing.T) {
+	user, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
 	tests := []struct {
 		name     string
 		dir      func(*testing.T) string
@@ -63,6 +69,23 @@ func TestCheckDir(t *testing.T) {
 				"bar/":    "<dir>",
 				"foo":     "acbd18db4cc2f85cedef654fccc4a4d8",
 				"bar/baz": "73feffa4b7f6bb68e44cf984c85f6e88",
+			},
+		},
+		{
+			name: "files only, full",
+			dir: func(t *testing.T) string {
+				d, err := ioutil.TempDir("", "empty dir")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if e := ioutil.WriteFile(d+"/foo", []byte("foo"), 0777); e != nil {
+					t.Fatal(e)
+				}
+				return d
+			},
+			full: true,
+			expected: map[string]string{
+				"foo": fmt.Sprintf("0755 %s.%s acbd18db4cc2f85cedef654fccc4a4d8", user.Uid, user.Gid),
 			},
 		},
 	}
