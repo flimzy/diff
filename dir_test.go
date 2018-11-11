@@ -59,6 +59,7 @@ func TestCheckDir(t *testing.T) {
 				return d
 			},
 			expected: map[string]string{
+				"bar/":    "<dir>",
 				"foo":     "acbd18db4cc2f85cedef654fccc4a4d8",
 				"bar/baz": "73feffa4b7f6bb68e44cf984c85f6e88",
 			},
