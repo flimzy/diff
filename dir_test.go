@@ -5,8 +5,16 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"syscall"
 	"testing"
 )
+
+var umask int
+
+func init() {
+	umask = syscall.Umask(0)
+	syscall.Umask(umask)
+}
 
 func TestCheckDir(t *testing.T) {
 	user, err := user.Current()
@@ -85,7 +93,8 @@ func TestCheckDir(t *testing.T) {
 			},
 			full: true,
 			expected: map[string]string{
-				"foo": fmt.Sprintf("0755 %s.%s acbd18db4cc2f85cedef654fccc4a4d8", user.Uid, user.Gid),
+				"foo": fmt.Sprintf("%04o %s.%s acbd18db4cc2f85cedef654fccc4a4d8",
+					0777-umask, user.Uid, user.Gid),
 			},
 		},
 	}
