@@ -36,14 +36,15 @@ func recurseDir(result map[string]string, parents []string) error {
 		return err
 	}
 	for _, f := range files {
-		filename := dir + "/" + f.Name()
+		relName := relativeName(parents, f.Name())
 		if f.IsDir() {
+			result[relName+"/"] = "<dir>"
 			if err := recurseDir(result, append(parents, f.Name())); err != nil {
 				return err
 			}
 			continue
 		}
-		content, err := os.Open(filename)
+		content, err := os.Open(dir + "/" + f.Name())
 		if err != nil {
 			return err
 		}
@@ -54,8 +55,12 @@ func recurseDir(result map[string]string, parents []string) error {
 		if err := content.Close(); err != nil {
 			return err
 		}
-		parts := append(parents[1:], f.Name())
-		result[strings.Join(parts, "/")] = hex.EncodeToString(hash.Sum([]byte{}))
+		result[relName] = hex.EncodeToString(hash.Sum([]byte{}))
 	}
 	return nil
+}
+
+func relativeName(parents []string, name string) string {
+	parts := append(parents[1:], name)
+	return strings.Join(parts, "/")
 }
