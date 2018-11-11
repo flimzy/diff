@@ -10,6 +10,7 @@ func TestCheckDir(t *testing.T) {
 	tests := []struct {
 		name     string
 		dir      func(*testing.T) string
+		full     bool
 		expected map[string]string
 		err      string
 	}{
@@ -71,7 +72,7 @@ func TestCheckDir(t *testing.T) {
 			defer func() {
 				_ = os.RemoveAll(dir)
 			}()
-			result, err := checkDir(dir)
+			result, err := checkDir(dir, test.full)
 			var msg string
 			if err != nil {
 				msg = err.Error()
