@@ -94,7 +94,7 @@ func hash(dir string, f os.FileInfo, full bool) (string, error) {
 		hash = hex.EncodeToString(h.Sum([]byte{}))
 	}
 	if full {
-		return fmt.Sprintf("%04o %s %s", f.Mode(), owner(f), hash), nil
+		return fmt.Sprintf("%04o %s %s", f.Mode()&0xfff, owner(f), hash), nil
 	}
 	return hash, nil
 }

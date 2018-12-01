@@ -97,6 +97,29 @@ func TestCheckDir(t *testing.T) {
 					0777-umask, user.Uid, user.Gid),
 			},
 		},
+		{
+			name: "files and dirs, full",
+			dir: func(t *testing.T) string {
+				d, err := ioutil.TempDir("", "empty dir")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if e := ioutil.WriteFile(d+"/foo", []byte("foo"), 0777); e != nil {
+					t.Fatal(e)
+				}
+				if e := os.Mkdir(d+"/bar", 0777); e != nil {
+					t.Fatal(e)
+				}
+				return d
+			},
+			full: true,
+			expected: map[string]string{
+				"foo": fmt.Sprintf("%04o %s.%s acbd18db4cc2f85cedef654fccc4a4d8",
+					0777-umask, user.Uid, user.Gid),
+				"bar/": fmt.Sprintf("%04o %s.%s <dir>",
+					0777-umask, user.Uid, user.Gid),
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
