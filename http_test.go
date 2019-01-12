@@ -23,6 +23,12 @@ func TestHTTPRequest(t *testing.T) {
 			actual:   httptest.NewRequest("GET", "/foo.html", nil),
 			result:   "--- expected\n+++ actual\n@@ -1,3 +1,3 @@\n-GET / HTTP/1.1\r\n+GET /foo.html HTTP/1.1\r\n Host: example.com\r\n \r\n",
 		},
+		{
+			name:     "nil request",
+			expected: nil,
+			actual:   httptest.NewRequest("GET", "/foo.html", nil),
+			result:   "--- expected\n+++ actual\n@@ -1 +1,3 @@\n-\n+GET /foo.html HTTP/1.1\r\n+Host: example.com\r\n+\r\n",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -58,6 +64,14 @@ func TestHTTPResponse(t *testing.T) {
 				Header: http.Header{"Foo": []string{"qux"}},
 			},
 			result: "--- expected\n+++ actual\n@@ -1,4 +1,4 @@\n HTTP/0.0 000 status code 0\r\n-Foo: bar\r\n+Foo: qux\r\n Content-Length: 0\r\n \r\n",
+		},
+		{
+			name:     "nil response",
+			expected: nil,
+			actual: &http.Response{
+				Header: http.Header{"Foo": []string{"qux"}},
+			},
+			result: "--- expected\n+++ actual\n@@ -1 +1,4 @@\n-\n+HTTP/0.0 000 status code 0\r\n+Foo: qux\r\n+Content-Length: 0\r\n+\r\n",
 		},
 	}
 	for _, test := range tests {
