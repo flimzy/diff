@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 
@@ -77,8 +78,12 @@ func TextSlices(expected, actual []string) *Result {
 // - []byte
 // - io.Reader
 func Text(expected, actual interface{}) *Result {
+	return text(UpdateMode, expected, actual)
+}
+
+func text(updateMode bool, expected, actual interface{}) *Result {
 	exp, err := toText(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("[diff] expected: %s", err)}
 	}
 	act, err := toText(actual)
@@ -92,9 +97,10 @@ func Text(expected, actual interface{}) *Result {
 		strings.SplitAfter(act, "\n"),
 	)
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, act) {
-			panic(err)
+		if err := update(UpdateMode, file, act); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
@@ -159,7 +165,7 @@ func marshal(i interface{}) ([]byte, error) {
 // comparison.
 func AsJSON(expected, actual interface{}) *Result {
 	expectedJSON, err := marshal(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("failed to marshal expected value: %s", err)}
 	}
 	actualJSON, err := marshal(actual)
@@ -172,11 +178,12 @@ func AsJSON(expected, actual interface{}) *Result {
 	if reflect.DeepEqual(e, a) {
 		return nil
 	}
-	d := Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
+	d := text(false, string(expectedJSON)+"\n", string(actualJSON)+"\n")
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actualJSON)) {
-			panic(err)
+		if err := update(UpdateMode, file, string(actualJSON)); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
@@ -213,5 +220,5 @@ func Interface(expected, actual interface{}) *Result {
 	}
 	expString := scs.Sdump(expected)
 	actString := scs.Sdump(actual)
-	return Text(expString, actString)
+	return text(false, expString, actString)
 }

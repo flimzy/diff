@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ import (
 // - []byte
 func HTTPRequest(expected, actual interface{}) *Result {
 	expDump, err := dumpRequest(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("Failed to dump expected request: %s", err)}
 	}
 	actDump, err := dumpRequest(actual)
@@ -28,9 +29,10 @@ func HTTPRequest(expected, actual interface{}) *Result {
 	}
 	d := Text(string(expDump), string(actDump))
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
+		if err := update(UpdateMode, file, string(actDump)); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
@@ -72,7 +74,7 @@ func dumpRequest(i interface{}) ([]byte, error) {
 // - []byte
 func HTTPResponse(expected, actual interface{}) *Result {
 	expDump, err := dumpResponse(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("Failed to dump expected response: %s", err)}
 	}
 	actDump, err := dumpResponse(actual)
@@ -81,9 +83,10 @@ func HTTPResponse(expected, actual interface{}) *Result {
 	}
 	d := Text(string(expDump), string(actDump))
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
+		if err := update(UpdateMode, file, string(actDump)); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
