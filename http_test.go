@@ -66,12 +66,27 @@ func TestHTTPResponse(t *testing.T) {
 			result: "--- expected\n+++ actual\n@@ -1,4 +1,4 @@\n HTTP/0.0 000 status code 0\r\n-Foo: bar\r\n+Foo: qux\r\n Content-Length: 0\r\n \r\n",
 		},
 		{
-			name:     "nil response",
+			name:     "nil response body",
 			expected: nil,
 			actual: &http.Response{
 				Header: http.Header{"Foo": []string{"qux"}},
 			},
 			result: "--- expected\n+++ actual\n@@ -1 +1,4 @@\n-\n+HTTP/0.0 000 status code 0\r\n+Foo: qux\r\n+Content-Length: 0\r\n+\r\n",
+		},
+		{
+			name: "two nil bodies",
+			expected: &http.Response{
+				StatusCode: 400,
+				ProtoMajor: 1,
+				ProtoMinor: 1,
+				Header:     http.Header{"Foo": []string{"qux"}},
+			},
+			actual: &http.Response{
+				StatusCode: 400,
+				ProtoMajor: 1,
+				ProtoMinor: 1,
+				Header:     http.Header{"Foo": []string{"qux"}},
+			},
 		},
 	}
 	for _, test := range tests {

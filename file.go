@@ -6,6 +6,8 @@ import (
 )
 
 // File converts a file into an io.Reader.
+// When UpdateMode is true, a dected difference will cause File to be
+// overwritten with the actual value, when File is the expected value.
 type File struct {
 	Path string
 	r    io.Reader

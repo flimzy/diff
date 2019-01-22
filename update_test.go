@@ -3,7 +3,6 @@ package diff
 import (
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -63,7 +62,7 @@ func TestUpdate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := update(test.updateMode, test.expected, strings.NewReader(test.actual))
+			err := update(test.updateMode, test.expected, test.actual)
 			var msg string
 			if err != nil {
 				msg = err.Error()

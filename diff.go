@@ -87,10 +87,16 @@ func Text(expected, actual interface{}) *Result {
 	}
 	exp = strings.TrimSuffix(exp, "\n")
 	act = strings.TrimSuffix(act, "\n")
-	return TextSlices(
+	d := TextSlices(
 		strings.SplitAfter(exp, "\n"),
 		strings.SplitAfter(act, "\n"),
 	)
+	if file, ok := expected.(*File); ok && d != nil {
+		if err != update(UpdateMode, file, act) {
+			panic(err)
+		}
+	}
+	return d
 }
 
 func toText(i interface{}) (string, error) {
@@ -166,7 +172,13 @@ func AsJSON(expected, actual interface{}) *Result {
 	if reflect.DeepEqual(e, a) {
 		return nil
 	}
-	return Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
+	d := Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
+	if file, ok := expected.(*File); ok && d != nil {
+		if err != update(UpdateMode, file, string(actualJSON)) {
+			panic(err)
+		}
+	}
+	return d
 }
 
 // JSON unmarshals two JSON strings, then calls AsJSON on them. As a special

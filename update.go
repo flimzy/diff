@@ -1,11 +1,10 @@
 package diff
 
 import (
-	"io"
 	"os"
 )
 
-func update(updateMode bool, expected *File, actual io.Reader) error {
+func update(updateMode bool, expected *File, actual string) error {
 	if !updateMode {
 		return nil
 	}
@@ -14,6 +13,6 @@ func update(updateMode bool, expected *File, actual io.Reader) error {
 		return err
 	}
 	defer file.Close()
-	_, err = io.Copy(file, actual)
+	_, err = file.WriteString(actual)
 	return err
 }
