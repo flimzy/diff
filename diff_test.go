@@ -129,6 +129,11 @@ func TestText(t *testing.T) {
 			actual:   nil,
 			result:   "--- expected\n+++ actual\n@@ -1 +1 @@\n-foo\n+\n",
 		},
+		{
+			name:     "file input",
+			expected: &File{Path: "testdata/test.txt"},
+			actual:   "Test Content\n",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
