@@ -87,7 +87,13 @@ Accept: */*
 		{
 			name:     "nil",
 			expected: nil,
-			actual:   func() interface{} { return nil }(),
+			actual:   nil,
+		},
+		{
+			name:     "unknown input type",
+			expected: 123,
+			actual:   nil,
+			result:   "Failed to dump expected request: Unable to convert int to *http.Request",
 		},
 	}
 	for _, test := range tests {
