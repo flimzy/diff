@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 
@@ -78,7 +79,7 @@ func TextSlices(expected, actual []string) *Result {
 // - io.Reader
 func Text(expected, actual interface{}) *Result {
 	exp, err := toText(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("[diff] expected: %s", err)}
 	}
 	act, err := toText(actual)
@@ -159,7 +160,7 @@ func marshal(i interface{}) ([]byte, error) {
 // comparison.
 func AsJSON(expected, actual interface{}) *Result {
 	expectedJSON, err := marshal(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("failed to marshal expected value: %s", err)}
 	}
 	actualJSON, err := marshal(actual)

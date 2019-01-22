@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ import (
 // - []byte
 func HTTPRequest(expected, actual interface{}) *Result {
 	expDump, err := dumpRequest(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("Failed to dump expected request: %s", err)}
 	}
 	actDump, err := dumpRequest(actual)
@@ -72,7 +73,7 @@ func dumpRequest(i interface{}) ([]byte, error) {
 // - []byte
 func HTTPResponse(expected, actual interface{}) *Result {
 	expDump, err := dumpResponse(expected)
-	if err != nil {
+	if err != nil && !(UpdateMode && os.IsNotExist(err)) {
 		return &Result{err: fmt.Sprintf("Failed to dump expected response: %s", err)}
 	}
 	actDump, err := dumpResponse(actual)
