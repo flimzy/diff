@@ -29,9 +29,10 @@ func HTTPRequest(expected, actual interface{}) *Result {
 	}
 	d := Text(string(expDump), string(actDump))
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
+		if err := update(UpdateMode, file, string(actDump)); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
@@ -82,9 +83,10 @@ func HTTPResponse(expected, actual interface{}) *Result {
 	}
 	d := Text(string(expDump), string(actDump))
 	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
+		if err := update(UpdateMode, file, string(actDump)); err != nil {
+			return &Result{err: fmt.Sprintf("Update failed: %s", err)}
 		}
+		return nil
 	}
 	return d
 }
