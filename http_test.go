@@ -1,8 +1,10 @@
 package diff
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -47,7 +49,7 @@ func TestHTTPRequest(t *testing.T) {
 func TestHTTPResponse(t *testing.T) {
 	tests := []struct {
 		name             string
-		expected, actual *http.Response
+		expected, actual interface{}
 		result           string
 	}{
 		{
@@ -87,6 +89,68 @@ func TestHTTPResponse(t *testing.T) {
 				ProtoMinor: 1,
 				Header:     http.Header{"Foo": []string{"qux"}},
 			},
+		},
+		{
+			name:     "read from file",
+			expected: &File{Path: "testdata/response.raw"},
+			actual: &http.Response{
+				StatusCode:    http.StatusOK,
+				ProtoMajor:    1,
+				ProtoMinor:    1,
+				ContentLength: 11,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"Date":         []string{"Tue, 22 Jan 2019 18:44:09 GMT"},
+				},
+				Body: ioutil.NopCloser(strings.NewReader(`{"ok":true}`)),
+			},
+		},
+		{
+			name: "string",
+			expected: `HTTP/1.1 200 OK
+Content-Length: 11
+Content-Type: application/json
+Date: Tue, 22 Jan 2019 18:44:09 GMT
+
+{"ok":true}
+`,
+			actual: &http.Response{
+				StatusCode:    http.StatusOK,
+				ProtoMajor:    1,
+				ProtoMinor:    1,
+				ContentLength: 11,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"Date":         []string{"Tue, 22 Jan 2019 18:44:09 GMT"},
+				},
+				Body: ioutil.NopCloser(strings.NewReader(`{"ok":true}`)),
+			},
+		},
+		{
+			name: "byte slice",
+			expected: []byte(`HTTP/1.1 200 OK
+Content-Length: 11
+Content-Type: application/json
+Date: Tue, 22 Jan 2019 18:44:09 GMT
+
+{"ok":true}
+`),
+			actual: &http.Response{
+				StatusCode:    http.StatusOK,
+				ProtoMajor:    1,
+				ProtoMinor:    1,
+				ContentLength: 11,
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+					"Date":         []string{"Tue, 22 Jan 2019 18:44:09 GMT"},
+				},
+				Body: ioutil.NopCloser(strings.NewReader(`{"ok":true}`)),
+			},
+		},
+		{
+			name:     "unknown input type",
+			expected: int(123),
+			result:   "Failed to dump expected response: Unable to convert int to *http.Response",
 		},
 	}
 	for _, test := range tests {
