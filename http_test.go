@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -11,7 +12,7 @@ import (
 func TestHTTPRequest(t *testing.T) {
 	tests := []struct {
 		name             string
-		expected, actual *http.Request
+		expected, actual interface{}
 		result           string
 	}{
 		{
@@ -30,6 +31,63 @@ func TestHTTPRequest(t *testing.T) {
 			expected: nil,
 			actual:   httptest.NewRequest("GET", "/foo.html", nil),
 			result:   "--- expected\n+++ actual\n@@ -1 +1,3 @@\n-\n+GET /foo.html HTTP/1.1\r\n+Host: example.com\r\n+\r\n",
+		},
+		{
+			name: "string",
+			expected: `GET / HTTP/1.1
+Host: localhost:6005
+User-Agent: curl/7.52.1
+Accept: */*
+
+`,
+			actual: &http.Request{
+				Method:     http.MethodGet,
+				ProtoMajor: 1,
+				ProtoMinor: 1,
+				URL:        &url.URL{Host: "localhost:6005"},
+				Header: http.Header{
+					"Accept":     []string{"*/*"},
+					"User-Agent": []string{"curl/7.52.1"},
+				},
+			},
+		},
+		{
+			name: "byte slice",
+			expected: []byte(`GET / HTTP/1.1
+Host: localhost:6005
+User-Agent: curl/7.52.1
+Accept: */*
+
+`),
+			actual: &http.Request{
+				Method:     http.MethodGet,
+				ProtoMajor: 1,
+				ProtoMinor: 1,
+				URL:        &url.URL{Host: "localhost:6005"},
+				Header: http.Header{
+					"Accept":     []string{"*/*"},
+					"User-Agent": []string{"curl/7.52.1"},
+				},
+			},
+		},
+		{
+			name:     "file",
+			expected: &File{Path: "testdata/request.raw"},
+			actual: &http.Request{
+				Method:     http.MethodGet,
+				ProtoMajor: 1,
+				ProtoMinor: 1,
+				URL:        &url.URL{Host: "localhost:6005"},
+				Header: http.Header{
+					"Accept":     []string{"*/*"},
+					"User-Agent": []string{"curl/7.52.1"},
+				},
+			},
+		},
+		{
+			name:     "nil",
+			expected: nil,
+			actual:   func() interface{} { return nil }(),
 		},
 	}
 	for _, test := range tests {
