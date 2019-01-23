@@ -27,12 +27,7 @@ func HTTPRequest(expected, actual interface{}) *Result {
 		return &Result{err: fmt.Sprintf("Failed to dump actual request: %s", err)}
 	}
 	d := Text(string(expDump), string(actDump))
-	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
-		}
-	}
-	return d
+	return update(UpdateMode, expected, string(actDump), d)
 }
 
 func toRequest(i interface{}) (*http.Request, error) {
@@ -80,12 +75,7 @@ func HTTPResponse(expected, actual interface{}) *Result {
 		return &Result{err: fmt.Sprintf("Failed to dump actual response: %s", err)}
 	}
 	d := Text(string(expDump), string(actDump))
-	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actDump)) {
-			panic(err)
-		}
-	}
-	return d
+	return update(UpdateMode, expected, string(actDump), d)
 }
 
 func toResponse(i interface{}) (*http.Response, error) {
