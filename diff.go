@@ -91,12 +91,7 @@ func Text(expected, actual interface{}) *Result {
 		strings.SplitAfter(exp, "\n"),
 		strings.SplitAfter(act, "\n"),
 	)
-	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, act) {
-			panic(err)
-		}
-	}
-	return d
+	return update(UpdateMode, expected, act, d)
 }
 
 func toText(i interface{}) (string, error) {
@@ -173,12 +168,7 @@ func AsJSON(expected, actual interface{}) *Result {
 		return nil
 	}
 	d := Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
-	if file, ok := expected.(*File); ok && d != nil {
-		if err != update(UpdateMode, file, string(actualJSON)) {
-			panic(err)
-		}
-	}
-	return d
+	return update(UpdateMode, expected, string(actualJSON), d)
 }
 
 // JSON unmarshals two JSON strings, then calls AsJSON on them. As a special
