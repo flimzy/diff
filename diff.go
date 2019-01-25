@@ -77,20 +77,22 @@ func TextSlices(expected, actual []string) *Result {
 // - []byte
 // - io.Reader
 func Text(expected, actual interface{}) *Result {
-	exp, err := toText(expected)
-	if err != nil {
-		return &Result{err: fmt.Sprintf("[diff] expected: %s", err)}
-	}
+	exp, expErr := toText(expected)
 	act, err := toText(actual)
 	if err != nil {
 		return &Result{err: fmt.Sprintf("[diff] actual: %s", err)}
 	}
-	exp = strings.TrimSuffix(exp, "\n")
-	act = strings.TrimSuffix(act, "\n")
-	d := TextSlices(
-		strings.SplitAfter(exp, "\n"),
-		strings.SplitAfter(act, "\n"),
-	)
+	var d *Result
+	if expErr != nil {
+		d = &Result{err: fmt.Sprintf("[diff] expected: %s", expErr)}
+	} else {
+		exp = strings.TrimSuffix(exp, "\n")
+		act = strings.TrimSuffix(act, "\n")
+		d = TextSlices(
+			strings.SplitAfter(exp, "\n"),
+			strings.SplitAfter(act, "\n"),
+		)
+	}
 	return update(UpdateMode, expected, act, d)
 }
 
@@ -153,21 +155,23 @@ func marshal(i interface{}) ([]byte, error) {
 // unmarshaled then remarshaled with indentation for normalization and
 // comparison.
 func AsJSON(expected, actual interface{}) *Result {
-	expectedJSON, err := marshal(expected)
-	if err != nil {
-		return &Result{err: fmt.Sprintf("failed to marshal expected value: %s", err)}
-	}
+	expectedJSON, expErr := marshal(expected)
 	actualJSON, err := marshal(actual)
 	if err != nil {
 		return &Result{err: fmt.Sprintf("failed to marshal actual value: %s", err)}
 	}
-	var e, a interface{}
-	_ = json.Unmarshal(expectedJSON, &e)
-	_ = json.Unmarshal(actualJSON, &a)
-	if reflect.DeepEqual(e, a) {
-		return nil
+	var d *Result
+	if expErr != nil {
+		d = &Result{err: fmt.Sprintf("failed to marshal expected value: %s", expErr)}
+	} else {
+		var e, a interface{}
+		_ = json.Unmarshal(expectedJSON, &e)
+		_ = json.Unmarshal(actualJSON, &a)
+		if reflect.DeepEqual(e, a) {
+			return nil
+		}
+		d = Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 	}
-	d := Text(string(expectedJSON)+"\n", string(actualJSON)+"\n")
 	return update(UpdateMode, expected, string(actualJSON), d)
 }
 
