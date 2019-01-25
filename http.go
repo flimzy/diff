@@ -18,15 +18,17 @@ import (
 // - string
 // - []byte
 func HTTPRequest(expected, actual interface{}) *Result {
-	expDump, err := dumpRequest(expected)
-	if err != nil {
-		return &Result{err: fmt.Sprintf("Failed to dump expected request: %s", err)}
-	}
+	expDump, expErr := dumpRequest(expected)
 	actDump, err := dumpRequest(actual)
 	if err != nil {
 		return &Result{err: fmt.Sprintf("Failed to dump actual request: %s", err)}
 	}
-	d := Text(string(expDump), string(actDump))
+	var d *Result
+	if expErr != nil {
+		d = &Result{err: fmt.Sprintf("Failed to dump expected request: %s", expErr)}
+	} else {
+		d = Text(string(expDump), string(actDump))
+	}
 	return update(UpdateMode, expected, string(actDump), d)
 }
 
@@ -66,15 +68,17 @@ func dumpRequest(i interface{}) ([]byte, error) {
 // - string
 // - []byte
 func HTTPResponse(expected, actual interface{}) *Result {
-	expDump, err := dumpResponse(expected)
-	if err != nil {
-		return &Result{err: fmt.Sprintf("Failed to dump expected response: %s", err)}
-	}
+	expDump, expErr := dumpResponse(expected)
 	actDump, err := dumpResponse(actual)
 	if err != nil {
 		return &Result{err: fmt.Sprintf("Failed to dump actual response: %s", err)}
 	}
-	d := Text(string(expDump), string(actDump))
+	var d *Result
+	if expErr != nil {
+		d = &Result{err: fmt.Sprintf("Failed to dump expected response: %s", expErr)}
+	} else {
+		d = Text(string(expDump), string(actDump))
+	}
 	return update(UpdateMode, expected, string(actDump), d)
 }
 
