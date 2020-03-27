@@ -1,5 +1,8 @@
 // Package diff provides some convenience functions for comparing text in various
 // forms. It's primary use case is in automated testing.
+//
+// Deprecated: This package is no longer maintained. Please use
+// gitlab.com/flimzy/testy instead.
 package diff
 
 import (
